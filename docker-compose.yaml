@@ -1,0 +1,51 @@
+version: '3'
+
+networks:
+  local:
+
+services:
+  redis-forum-api:
+    image: redis
+    container_name: redis-forum-api
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - local
+  
+  prometheus:
+    image: prom/prometheus:v2.30.3
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:8.2.0
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+  mysql-forum-api:
+    image: mysql:5.7
+    container_name: mysql-forum-api
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: 'forum'
+      MYSQL_USER: 'forum'
+      MYSQL_PASSWORD: 'Bk55yc1u0eiqga6e'
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+    grafana_data:
+        external: true
+    ports:
+      - 3306:3306
+    networks:
+      - local
+    depends_on:
+      - redis-forum-api
